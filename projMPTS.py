@@ -1,5 +1,5 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
 def Ruv(kb,kg,rb,di):
     #important assumption buv = 2*di, they are simmetrical to each other
     res = 0
@@ -18,33 +18,43 @@ def Ruu(kb,kg,rb,rpo,di,mif,kp,rpi,M,kf):
     res += np.log(rpo/rpi)/(2*np.pi*kp)+1/(2*np.pi*hf*kp)
     return res
 #important Ruu not divided
-def temp_profile_in(kb,kg,rb,rpo,di,mif,kp,rpi,M,kf,cf):
-    iter_num = 1000
+def temp_profile_in(iter_num,kb,kg,rb,rpo,di,mif,kp,rpi,M,kf,cf):
+    
     #dt = 
     Tinit = 281
-    Tu = np.full((1000,20),Tinit)
-    Tv = np.full((1000,20),Tinit)
+    Tu = np.full((iter_num,21),Tinit)
+    Tv = np.full((iter_num,21),Tinit)
     Tbi = Tinit
     dt = 1
     dz = 1 
     varRuu = Ruu(kb,kg,rb,rpo,di,mif,kp,rpi,M,kf)
     varRuv = Ruv(kb,kg,rb,di)
-    #nienane Tbi
-    for t in range(1,1000):
-        #Tu[t][0] = Tinit
-        Tv[t][0] = Tinit
-        for i in range(1,20):
+
+    for t in range(1,iter_num):
+        Tu[t][0] = Tv[t-1][0]+Q/cf/M
+        
+        for i in range(2,21):
+            Tbi = (Tv[t][i-1]+Tv[t][i-1]+Tu[t][i-1]+Tu[t][i-1])/4
             A = np.array((((-M*cf/dz+varRuv+varRuu),(varRuv)),
                          ((M*cf/dz-varRuv-varRuu),(varRuv))))
             B = np.array(((varRuu*(Tu[t-1][i]-2*Tbi)+varRuv*(Tu[t-1][i]-Tv[t-1][i])),
                           (varRuu*(Tv[t-1][i]-2*Tbi)+varRuv*(Tv[t-1][i]-Tu[t-1][i]))))
             Tu[t][i],Tv[t][i] =np.linalg.solve(A,B)
+
+    return Tu,Tv
 def temp_profile_around():
     pass
 def calc(kb,kg,rb,rpo,di,mif,kp,rpi,M,kf,cf):
-    
-    temp_profile_in(kb,kg,rb,rpo,di,mif,kp,rpi,M,kf,cf)
+    iter_num = 1001
+    Tu,Tv = temp_profile_in(iter_num,kb,kg,rb,rpo,di,mif,kp,rpi,M,kf,cf)
     temp_profile_around()
+    t = np.linspace(0,iter_num-1,iter_num)
+    plt.clf()
+    plt.plot(t,Tu[:,0])
+    plt.show()
+    plt.clf()
+    plt.plot(t,Tv[:,0])
+    plt.show()
 
 def plot():
     pass
