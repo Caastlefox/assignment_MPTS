@@ -27,30 +27,32 @@ def temp_profile_in(iter_num,kb,kg,rb,rpo,di,mif,kp,rpi,M,kf,cf):
     Tbi = Tinit
     dt = 1
     dz = 1 
-    varRuu = Ruu(kb,kg,rb,rpo,di,mif,kp,rpi,M,kf)
-    varRuv = Ruv(kb,kg,rb,di)
+    varRuu = Ruu(kb,kg,rb,rpo,di,mif,kp,rpi,M,kf)+Ruv(kb,kg,rb,di)
+    varRuv = -Ruv(kb,kg,rb,di)
 
     for t in range(1,iter_num):
         Tu[t][0] = Tv[t-1][0]+Q/cf/M
-        
+        Tu[t][1] = Tv[t-1][1]+Q/cf/M 
         for i in range(2,21):
-            Tbi = (Tv[t][i-1]+Tv[t][i-1]+Tu[t][i-1]+Tu[t][i-1])/4
-            A = np.array((((-M*cf/dz+varRuv+varRuu),(varRuv)),
+            Tbi = (Tv[t][i-2]+Tv[t][i-2]+Tu[t][i-1]+Tu[t][i-1])/4
+            A = np.array((((-M*cf/dz-varRuv-varRuu),(varRuv)),
                          ((M*cf/dz-varRuv-varRuu),(varRuv))))
-            B = np.array(((varRuu*(Tu[t-1][i]-2*Tbi)+varRuv*(Tu[t-1][i]-Tv[t-1][i])),
-                          (varRuu*(Tv[t-1][i]-2*Tbi)+varRuv*(Tv[t-1][i]-Tu[t-1][i]))))
+            B = np.array(((-Tu[t-1][i]*M*cf/dz+varRuu*(Tu[t-1][i]-2*Tbi)+varRuv*(Tu[t-1][i]-Tv[t-1][i])),
+                          (Tv[t-1][i]*M*cf/dz+varRuu*(Tv[t-1][i]-2*Tbi)+varRuv*(Tv[t-1][i]-Tu[t-1][i]))))
             Tu[t][i],Tv[t][i] =np.linalg.solve(A,B)
 
     return Tu,Tv
-def temp_profile_around():
-    pass
+
 def calc(kb,kg,rb,rpo,di,mif,kp,rpi,M,kf,cf):
-    iter_num = 1001
+    iter_num = 2
     Tu,Tv = temp_profile_in(iter_num,kb,kg,rb,rpo,di,mif,kp,rpi,M,kf,cf)
-    temp_profile_around()
+    #temp_profile_around()
     t = np.linspace(0,iter_num-1,iter_num)
     plt.clf()
-    plt.plot(t,Tu[:,0])
+    plt.plot(t,Tu[:,2])
+    plt.show()
+    plt.clf()
+    plt.plot(t,Tu[:,1])
     plt.show()
     plt.clf()
     plt.plot(t,Tv[:,0])
