@@ -1,3 +1,4 @@
+from _pytest.monkeypatch import V
 import numpy as np
 import matplotlib.pyplot as plt
 def Ruv(kb,kg,rb,di):
@@ -21,42 +22,60 @@ def Ruu(kb,kg,rb,rpo,di,mif,kp,rpi,M,kf):
 def temp_profile_in(iter_num,kb,kg,rb,rpo,di,mif,kp,rpi,M,kf,cf):
     
     #dt = 
-    Tinit = 281
+    Tinit = 281.
     Tu = np.full((iter_num,21),Tinit)
     Tv = np.full((iter_num,21),Tinit)
     Tbi = Tinit
     dt = 1
     dz = 1 
-    varRuu = Ruu(kb,kg,rb,rpo,di,mif,kp,rpi,M,kf)+Ruv(kb,kg,rb,di)
-    varRuv = -Ruv(kb,kg,rb,di)
+    varRuu = (Ruu(kb,kg,rb,rpo,di,mif,kp,rpi,M,kf)+Ruv(kb,kg,rb,di))/2
+    varRuv = -2*Ruv(kb,kg,rb,di)
 
     for t in range(1,iter_num):
-        Tu[t][0] = Tv[t-1][0]+Q/cf/M
-        Tu[t][1] = Tv[t-1][1]+Q/cf/M 
-        for i in range(2,21):
-            Tbi = (Tv[t][i-2]+Tv[t][i-2]+Tu[t][i-1]+Tu[t][i-1])/4
+        Tu[t][0] = Tv[t-1][0]+Q/cf/(2*M)
+        for i in range(1,21):
+            Tbi = (Tv[t][i-1]+Tv[t][i]+Tu[t][i]+Tu[t][i-1])/4
+            """
+            A = np.array((((-M*cf/dz-varRuu),0),
+                         (0,(M*cf/dz-varRuu))))
+            B = np.array(((-Tu[t-1][i]*M*cf/dz+varRuu*(Tu[t-1][i]-2*100)),
+                          (Tv[t-1][i]*M*cf/dz+varRuu*(Tv[t-1][i]-2*100))))
+            
+            """
             A = np.array((((-M*cf/dz-varRuv-varRuu),(varRuv)),
-                         ((M*cf/dz-varRuv-varRuu),(varRuv))))
+                         (varRuv,(M*cf/dz-varRuv-varRuu))))
             B = np.array(((-Tu[t-1][i]*M*cf/dz+varRuu*(Tu[t-1][i]-2*Tbi)+varRuv*(Tu[t-1][i]-Tv[t-1][i])),
                           (Tv[t-1][i]*M*cf/dz+varRuu*(Tv[t-1][i]-2*Tbi)+varRuv*(Tv[t-1][i]-Tu[t-1][i]))))
+            
             Tu[t][i],Tv[t][i] =np.linalg.solve(A,B)
-
+        Tv[t][0] = Tv[t][1]
+        Tv[t][20] = Tu[t][20]
     return Tu,Tv
 
 def calc(kb,kg,rb,rpo,di,mif,kp,rpi,M,kf,cf):
-    iter_num = 2
+    iter_num = 20001
     Tu,Tv = temp_profile_in(iter_num,kb,kg,rb,rpo,di,mif,kp,rpi,M,kf,cf)
     #temp_profile_around()
     t = np.linspace(0,iter_num-1,iter_num)
     plt.clf()
-    plt.plot(t,Tu[:,2])
+    plt.plot(t,Tu[:,0],label='0')
+    plt.plot(t,Tu[:,1],label='1')
+    plt.plot(t,Tu[:,2],label='2')
+    plt.plot(t,Tu[:,5],label='5')
+    plt.plot(t,Tu[:,8],label='8')
+    plt.plot(t,Tu[:,10],label='10')
+    plt.legend()
     plt.show()
     plt.clf()
-    plt.plot(t,Tu[:,1])
+    plt.plot(t,Tv[:,0],label='0')
+    plt.plot(t,Tv[:,1],label='1')
+    plt.plot(t,Tv[:,2],label='2')
+    plt.plot(t,Tv[:,5],label='5')
+    plt.plot(t,Tv[:,8],label='8')
+    plt.plot(t,Tv[:,10],label='10')
+    plt.legend()
     plt.show()
-    plt.clf()
-    plt.plot(t,Tv[:,0])
-    plt.show()
+  
 
 def plot():
     pass
